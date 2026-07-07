@@ -1,4 +1,5 @@
 from pathlib import Path
+import joblib
 
 import matplotlib.pyplot as plt
 import pandas as pd
@@ -8,6 +9,7 @@ from xgboost import XGBRegressor
 
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
 PROCESSED_DATA_PATH = PROJECT_ROOT / "ml" / "data" / "processed"
+MODEL_PATH = PROJECT_ROOT / "ml" / "models"
 
 
 def load_dataset() -> pd.DataFrame:
@@ -79,6 +81,17 @@ def evaluate_model(model, X_test, y_test):
     plt.show()
 
 
+def save_model(model):
+    MODEL_PATH.mkdir(parents=True, exist_ok=True)
+
+    joblib.dump(
+        model,
+        MODEL_PATH / "xgboost_sales_forecasting.pkl",
+    )
+
+    print("Model saved successfully.")
+
+
 def main():
     df = load_dataset()
 
@@ -86,8 +99,9 @@ def main():
 
     model = train_model(X_train, y_train)
 
-    evaluate_model(model, X_test, y_test)
+    save_model(model)
 
+    evaluate_model(model, X_test, y_test)
 
 if __name__ == "__main__":
     main()
