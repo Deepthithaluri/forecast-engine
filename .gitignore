@@ -1,10 +1,29 @@
+# Python
 __pycache__/
-*.pyc
+*.py[cod]
+*.pyo
+
+# Virtual Environment
 .venv/
 venv/
+
+# Environment Variables
 .env
+
+# IDE
 .idea/
 .vscode/
 
 # ML datasets
 ml/data/
+
+# Logs
+logs/
+*.log
+
+# Streamlit cache
+.streamlit/
+
+# OS files
+.DS_Store
+Thumbs.db

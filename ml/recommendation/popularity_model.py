@@ -2,13 +2,21 @@ import pandas as pd
 
 from ml.config import PROCESSED_DATA_PATH
 
+POPULAR_PRODUCTS = None
 
-def get_popular_products(top_n=10):
+
+def load_popular_products() -> None:
+    """
+    Load and cache popular products.
+    """
+
+    global POPULAR_PRODUCTS
+
     df = pd.read_csv(
         PROCESSED_DATA_PATH / "integrated_dataset.csv"
     )
 
-    popular_products = (
+    POPULAR_PRODUCTS = (
         df.groupby(
             [
                 "product_id",
@@ -23,8 +31,22 @@ def get_popular_products(top_n=10):
         )
     )
 
-    return popular_products.head(top_n)
+
+def get_popular_products(
+    top_n: int = 10,
+):
+    """
+    Return cached popular products.
+    """
+
+    if POPULAR_PRODUCTS is None:
+        load_popular_products()
+
+    return POPULAR_PRODUCTS.head(top_n)
 
 
 if __name__ == "__main__":
+
+    load_popular_products()
+
     print(get_popular_products())
