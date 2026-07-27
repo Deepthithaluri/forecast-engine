@@ -2,9 +2,13 @@ from pathlib import Path
 
 import matplotlib.pyplot as plt
 import pandas as pd
-
-from sklearn.metrics import mean_absolute_error, mean_squared_error
+from sklearn.metrics import (
+    mean_absolute_error,
+    mean_squared_error,
+    r2_score,
+)
 from xgboost import XGBRegressor
+
 
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
 PROCESSED_DATA_PATH = PROJECT_ROOT / "ml" / "data" / "processed"
@@ -18,14 +22,20 @@ def load_dataset() -> pd.DataFrame:
 
 
 def prepare_data(df: pd.DataFrame):
-    df = df.copy()
+
+    df = df.sort_values("date").reset_index(drop=True)
 
     df["day_number"] = range(len(df))
     df["month"] = df["date"].dt.month
     df["day"] = df["date"].dt.day
     df["weekday"] = df["date"].dt.dayofweek
 
-    features = ["day_number", "month", "day", "weekday"]
+    features = [
+        "day_number",
+        "month",
+        "day",
+        "weekday",
+    ]
 
     split_index = int(len(df) * 0.8)
 
@@ -42,10 +52,14 @@ def prepare_data(df: pd.DataFrame):
 
 
 def train_model(X_train, y_train):
+
     model = XGBRegressor(
+        objective="reg:squarederror",
         n_estimators=200,
         learning_rate=0.05,
         max_depth=5,
+        subsample=0.8,
+        colsample_bytree=0.8,
         random_state=42,
     )
 
@@ -55,30 +69,47 @@ def train_model(X_train, y_train):
 
 
 def evaluate_model(model, X_test, y_test):
+
     predictions = model.predict(X_test)
 
     mae = mean_absolute_error(y_test, predictions)
     rmse = mean_squared_error(y_test, predictions) ** 0.5
+    r2 = r2_score(y_test, predictions)
 
+    print("=" * 60)
+    print("XGBoost Baseline Forecast")
+    print("=" * 60)
     print(f"MAE  : {mae:.2f}")
     print(f"RMSE : {rmse:.2f}")
+    print(f"R²   : {r2:.4f}")
 
     plt.figure(figsize=(14, 6))
 
-    plt.plot(y_test.values, label="Actual Sales", linewidth=2)
-    plt.plot(predictions, label="Predicted Sales", linewidth=2)
+    plt.plot(
+        y_test.values,
+        label="Actual Sales",
+        linewidth=2,
+    )
 
-    plt.title("XGBoost Forecast")
+    plt.plot(
+        predictions,
+        label="Predicted Sales",
+        linewidth=2,
+    )
+
+    plt.title("XGBoost Baseline Forecast")
     plt.xlabel("Days")
-    plt.ylabel("Sales")
+    plt.ylabel("Daily Sales")
 
-    plt.legend()
     plt.grid(True)
+    plt.legend()
+    plt.tight_layout()
 
     plt.show()
 
 
 def main():
+
     df = load_dataset()
 
     X_train, X_test, y_train, y_test = prepare_data(df)
