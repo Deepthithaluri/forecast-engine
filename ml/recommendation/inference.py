@@ -17,7 +17,7 @@ engine = load_engine()
 
 
 def get_recommendations(
-    product_id: str,
+    product_name: str,
     top_n: int = 5,
 ):
     """
@@ -25,25 +25,41 @@ def get_recommendations(
     """
 
     return engine.recommend(
-        product_id=product_id,
+        product_name=product_name,
         top_n=top_n,
     )
 
 
 if __name__ == "__main__":
 
-    product_id = input(
-        "Enter Product ID: "
+    product_name = input(
+        "Enter Product Name: "
     ).strip()
 
-    recommendations = get_recommendations(
-        product_id
+    result = get_recommendations(
+        product_name
     )
 
     print("\nRecommendations\n")
 
-    if recommendations:
-        for recommendation in recommendations:
-            print(recommendation)
+    print(f"Recommendation Type : {result['recommendation_type']}")
+    print(f"Requested Product   : {result['requested_product']}")
+    print(f"Recommendation Count: {result['recommendation_count']}")
+
+    print("\nRecommended Products")
+    print("-" * 60)
+
+    if result["recommendations"]:
+        for i, recommendation in enumerate(
+            result["recommendations"],
+            start=1,
+        ):
+            print(f"{i}. {recommendation['product_name']}")
+            print(f"   Stock Code : {recommendation['stock_code']}")
+            print(
+                f"   Co-purchases : "
+                f"{recommendation['co_purchase_count']}"
+            )
+            print()
     else:
         print("No recommendations found.")

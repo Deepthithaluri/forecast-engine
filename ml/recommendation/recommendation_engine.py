@@ -3,31 +3,34 @@ from typing import Dict
 
 import pandas as pd
 
+from backend.logger import logger
 from ml.config import PROCESSED_DATA_PATH
-from ml.recommendation.popularity_model import (
-    get_popular_products,
-)
+from ml.recommendation.popularity_model import get_popular_products
 
-# Constants
-ORDER_ID = "order_id"
-PRODUCT_ID = "product_id"
-STATUS = "order_status"
-DELIVERED = "delivered"
-CATEGORY_EN = "product_category_name_english"
-CATEGORY = "product_category_name"
+
+INVOICE = "Invoice"
+STOCK_CODE = "StockCode"
+DESCRIPTION = "Description"
 
 
 class RecommendationEngine:
     """
-    Item Co-occurrence Recommendation Engine.
+    Item Co-occurrence Recommendation Engine
+    for the UCI Online Retail dataset.
     """
 
     def __init__(self) -> None:
+
         self.df: pd.DataFrame | None = None
 
-        self.cooccurrence: defaultdict = defaultdict(Counter)
+        # StockCode -> Counter(other StockCodes)
+        self.cooccurrence = defaultdict(Counter)
 
+        # StockCode -> Description
         self.product_lookup: Dict[str, str] = {}
+
+        # Description -> StockCode
+        self.description_lookup: Dict[str, str] = {}
 
         self.metadata: Dict[str, int | bool] = {}
 
@@ -35,81 +38,82 @@ class RecommendationEngine:
 
     def load_data(self) -> None:
         """
-        Load the processed dataset.
+        Load cleaned UCI dataset.
         """
 
         self.df = pd.read_csv(
-            PROCESSED_DATA_PATH / "integrated_dataset.csv"
+            PROCESSED_DATA_PATH / "cleaned_orders.csv"
         )
-
-        self.df = self.df[
-            self.df[STATUS] == DELIVERED
-        ]
 
         self.df = self.df.dropna(
             subset=[
-                ORDER_ID,
-                PRODUCT_ID,
+                INVOICE,
+                STOCK_CODE,
+                DESCRIPTION,
             ]
+        )
+
+        self.df[DESCRIPTION] = (
+            self.df[DESCRIPTION]
+            .astype(str)
+            .str.strip()
+        )
+
+        self.df[STOCK_CODE] = (
+            self.df[STOCK_CODE]
+            .astype(str)
+            .str.strip()
         )
 
     def build_product_lookup(self) -> None:
         """
-        Build Product → Category lookup.
+        Build lookup dictionaries.
         """
 
         if self.df is None:
             raise RuntimeError("Dataset not loaded.")
 
-        category_column = (
-            CATEGORY_EN
-            if CATEGORY_EN in self.df.columns
-            else CATEGORY
+        lookup = (
+            self.df[
+                [STOCK_CODE, DESCRIPTION]
+            ]
+            .drop_duplicates()
         )
 
         self.product_lookup = (
-            self.df[
-                [
-                    PRODUCT_ID,
-                    category_column,
-                ]
-            ]
-            .drop_duplicates()
-            .set_index(PRODUCT_ID)[category_column]
-            .fillna("Unknown")
+            lookup.set_index(STOCK_CODE)[DESCRIPTION]
             .to_dict()
         )
 
+        self.description_lookup = {
+            description.lower(): stock
+            for stock, description in self.product_lookup.items()
+        }
+
     def build_cooccurrence_model(self) -> None:
         """
-        Build item co-occurrence matrix.
+        Build item co-occurrence matrix using Invoice as basket.
         """
 
         if self.df is None:
             raise RuntimeError("Dataset not loaded.")
 
-        order_products = (
-            self.df.groupby(ORDER_ID)[PRODUCT_ID]
-            .apply(list)
+        baskets = (
+            self.df.groupby(INVOICE)[STOCK_CODE]
+            .apply(lambda x: list(set(x)))
         )
 
-        for products in order_products:
-
-            unique_products = list(set(products))
-
-            if len(unique_products) < 2:
+        for products in baskets:
+            if len(products) < 2:
                 continue
 
-            for product in unique_products:
-
-                for other_product in unique_products:
+            for product in products:
+                for other_product in products:
 
                     if product == other_product:
                         continue
 
-                    self.cooccurrence[product][
-                        other_product
-                    ] += 1
+                    self.cooccurrence[product][other_product] += 1
 
     def train(self) -> None:
         """
@@ -125,44 +129,30 @@ class RecommendationEngine:
         self.is_trained = True
 
         self.metadata = {
-            "orders": int(
-                self.df[ORDER_ID].nunique()
-            ),
-            "products": len(
-                self.product_lookup
-            ),
-            "cooccurrence_nodes": len(
-                self.cooccurrence
-            ),
+            "orders": int(self.df[INVOICE].nunique()),
+            "products": len(self.product_lookup),
+            "cooccurrence_nodes": len(self.cooccurrence),
             "trained": True,
         }
 
-        print("=" * 60)
-        print("Recommendation Engine Trained")
-        print("=" * 60)
-
-        print(
-            f"Orders                : {self.metadata['orders']}"
+        logger.info("=" * 60)
+        logger.info("Recommendation Engine Trained")
+        logger.info("=" * 60)
+        logger.info("Orders: %s", self.metadata["orders"])
+        logger.info("Products: %s", self.metadata["products"])
+        logger.info(
+            "Products With Recommendations: %s",
+            self.metadata["cooccurrence_nodes"],
         )
-
-        print(
-            f"Products              : {self.metadata['products']}"
-        )
-
-        print(
-            "Products With "
-            f"Recommendations : {self.metadata['cooccurrence_nodes']}"
-        )
-
-        print("=" * 60)
+        logger.info("=" * 60)
 
     def recommend(
         self,
-        product_id: str,
+        product_name: str,
         top_n: int = 5,
     ) -> dict:
         """
-        Recommend similar products.
+        Recommend products using product description.
         """
 
         if not self.is_trained:
@@ -175,17 +165,19 @@ class RecommendationEngine:
                 "top_n must be greater than zero."
             )
 
-        # Cold-start fallback
-        if product_id not in self.cooccurrence:
+        stock_code = self.description_lookup.get(
+            product_name.lower().strip()
+        )
+
+        # Popularity fallback
+        if stock_code is None or stock_code not in self.cooccurrence:
 
             popular_products = get_popular_products(top_n)
 
             recommendations = [
                 {
-                    "product_id": row["product_id"],
-                    "category": row[
-                        "product_category_name_english"
-                    ],
+                    "stock_code": row["StockCode"],
+                    "product_name": row["Description"],
                     "co_purchase_count": int(
                         row["purchase_count"]
                     ),
@@ -195,31 +187,34 @@ class RecommendationEngine:
 
             return {
                 "recommendation_type": "popularity_fallback",
-                "requested_product": product_id,
+                "requested_product": product_name,
                 "recommendation_count": len(recommendations),
                 "recommendations": recommendations,
             }
 
-        recommendations = (
-            self.cooccurrence[product_id]
+        similar_products = (
+            self.cooccurrence[stock_code]
             .most_common(top_n)
         )
 
-        recommendation_list = [
-            {
-                "product_id": product,
-                "category": self.product_lookup.get(
-                    product,
-                    "Unknown",
-                ),
-                "co_purchase_count": count,
-            }
-            for product, count in recommendations
-        ]
+        recommendation_list = []
+
+        for code, count in similar_products:
+
+            recommendation_list.append(
+                {
+                    "stock_code": code,
+                    "product_name": self.product_lookup.get(
+                        code,
+                        "Unknown Product",
+                    ),
+                    "co_purchase_count": count,
+                }
+            )
 
         return {
             "recommendation_type": "cooccurrence",
-            "requested_product": product_id,
+            "requested_product": product_name,
             "recommendation_count": len(
                 recommendation_list
             ),
@@ -227,9 +222,6 @@ class RecommendationEngine:
         }
 
     def get_training_summary(self) -> dict:
-        """
-        Return training statistics.
-        """
 
         if not self.is_trained:
             raise RuntimeError(
@@ -245,24 +237,16 @@ if __name__ == "__main__":
 
     engine.train()
 
-    print("\nMetadata\n")
+    print("\nTraining Summary\n")
+    print(engine.get_training_summary())
 
-    print(engine.metadata)
+    sample_product = next(
+        iter(engine.product_lookup.values())
+    )
 
-    if engine.cooccurrence:
+    print(f"\nSample Product:\n{sample_product}")
 
-        sample_product = next(
-            iter(engine.cooccurrence.keys())
-        )
+    recommendations = engine.recommend(sample_product)
 
-        print(
-            f"\nSample Product:\n{sample_product}"
-        )
-
-        recommendations = engine.recommend(
-            sample_product
-        )
-
-        print("\nRecommendations\n")
-
-        print(recommendations)
+    print("\nRecommendations\n")
+    print(recommendations)
