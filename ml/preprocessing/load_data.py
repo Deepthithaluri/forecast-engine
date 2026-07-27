@@ -2,32 +2,46 @@ from pathlib import Path
 
 import pandas as pd
 
-
-# Root Project Directory
-PROJECT_ROOT = Path(__file__).resolve().parents[2]
-
-# Raw Dataset Folder
-RAW_DATA_PATH = PROJECT_ROOT / "ml" / "data" / "raw"
+from ml.config import RAW_DATA_PATH
 
 
-def load_dataset(filename: str) -> pd.DataFrame:
+EXCEL_FILE = "Online Retail.xlsx"
 
-    file_path = RAW_DATA_PATH / filename
+
+def load_dataset() -> pd.DataFrame:
+    """
+    Load both sheets from the UCI Online Retail dataset
+    and combine them into a single DataFrame.
+    """
+
+    file_path = RAW_DATA_PATH / EXCEL_FILE
 
     if not file_path.exists():
         raise FileNotFoundError(
             f"Dataset not found: {file_path}"
         )
 
-    df = pd.read_csv(file_path)
+    year_2009 = pd.read_excel(
+        file_path,
+        sheet_name="Year 2009-2010",
+    )
+
+    year_2010 = pd.read_excel(
+        file_path,
+        sheet_name="Year 2010-2011",
+    )
+
+    df = pd.concat(
+        [year_2009, year_2010],
+        ignore_index=True,
+    )
 
     return df
 
 
-def display_basic_info(df: pd.DataFrame, dataset_name: str) -> None:
-
+def display_basic_info(df: pd.DataFrame) -> None:
     print("=" * 60)
-    print(f"Dataset : {dataset_name}")
+    print("UCI Online Retail Dataset")
     print("=" * 60)
 
     print(f"Rows    : {df.shape[0]}")
@@ -39,18 +53,16 @@ def display_basic_info(df: pd.DataFrame, dataset_name: str) -> None:
     print("\nData Types")
     print(df.dtypes)
 
+    print("\nMissing Values")
+    print(df.isnull().sum())
+
     print("\nFirst Five Rows")
     print(df.head())
 
 
 def main():
-
-    orders = load_dataset("olist_orders_dataset.csv")
-
-    display_basic_info(
-        orders,
-        "Orders Dataset"
-    )
+    df = load_dataset()
+    display_basic_info(df)
 
 
 if __name__ == "__main__":
