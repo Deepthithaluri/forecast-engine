@@ -1,12 +1,12 @@
-# Time Series-Driven E-Commerce Sales Forecasting and Intelligent Recommendation System
+# Time Series Driven E-Commerce Sales Forecasting and Intelligent Product Recommendation System
 
-## Project Description
+Final Year Project
 
-This project predicts future e-commerce sales using time series forecasting and recommends products using machine learning techniques. It includes a web dashboard, REST APIs, authentication, visualization, and model deployment.
+## Tech Stack
 
-## Objectives
-
-- Forecast future sales
-- Recommend products intelligently
-- Build a production quality AIML application
-- Learn end-to-end software engineering
+- Python
+- FastAPI
+- Streamlit
+- XGBoost
+- Pandas
+- Scikit-Learn

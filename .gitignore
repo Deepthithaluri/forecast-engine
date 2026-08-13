@@ -2,32 +2,39 @@
 __pycache__/
 *.py[cod]
 *.pyo
+*.pyd
+*.egg-info/
 
 # Virtual Environment
 .venv/
 venv/
+env/
+
+# Jupyter
+.ipynb_checkpoints/
+
+# VS Code
+.vscode/
+
+# macOS
+.DS_Store
 
 # Environment Variables
 .env
 
-# IDE
-.idea/
-.vscode/
+# ML Models
+*.pkl
+*.joblib
 
-# ML datasets
-ml/data/
+# Processed Data
+ml/data/processed/
 
 # Logs
-logs/
 *.log
 
-# Streamlit cache
-.streamlit/
+# Cache
+.pytest_cache/
+.mypy_cache/
 
-# OS files
-.DS_Store
-Thumbs.db
-
-# Trained ML models
-ml/models/*.joblib
-ml/models/*.pkl
+# Streamlit
+.streamlit/secrets.toml
