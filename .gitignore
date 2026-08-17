@@ -1,40 +1,63 @@
-# Python
+ # Python
 __pycache__/
 *.py[cod]
 *.pyo
 *.pyd
 *.egg-info/
 
+
 # Virtual Environment
 .venv/
 venv/
 env/
 
-# Jupyter
-.ipynb_checkpoints/
 
 # VS Code
 .vscode/
 
+
 # macOS
 .DS_Store
 
+
 # Environment Variables
 .env
+
 
 # ML Models
 *.pkl
 *.joblib
 
-# Processed Data
+
+# Raw datasets
+ml/data/raw/
+
+
+# Processed datasets
 ml/data/processed/
 
+
+# Trained models
+ml/models/
+
+
+# Artifacts
+ml/artifacts/
+
+
 # Logs
-*.log
+logs/
+
+
+# Jupyter checkpoints
+.ipynb_checkpoints/
+
+
 
 # Cache
 .pytest_cache/
 .mypy_cache/
+
 
 # Streamlit
 .streamlit/secrets.toml
