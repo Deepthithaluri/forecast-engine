@@ -1,18 +1,11 @@
 from pathlib import Path
 import pandas as pd
 
-# =====================================================
-# PATHS
-# =====================================================
-
 DATA_DIR = Path("ml/data/raw/benroshan")
 OUTPUT_DIR = Path("ml/data/processed")
 
 OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
 
-# =====================================================
-# LOAD DATA
-# =====================================================
 
 orders = pd.read_csv(DATA_DIR / "List of Orders.csv")
 details = pd.read_csv(DATA_DIR / "Order Details.csv")
@@ -24,9 +17,6 @@ print("=" * 80)
 print(f"Orders Shape : {orders.shape}")
 print(f"Details Shape: {details.shape}")
 
-# =====================================================
-# REMOVE EMPTY ROWS
-# =====================================================
 
 orders = orders.dropna(
     subset=[
@@ -45,9 +35,7 @@ print("\nAfter Cleaning")
 print(f"Orders Shape : {orders.shape}")
 print(f"Details Shape: {details.shape}")
 
-# =====================================================
-# REMOVE DUPLICATES
-# =====================================================
+
 
 orders = orders.drop_duplicates()
 
@@ -58,9 +46,6 @@ print("\nAfter Removing Duplicates")
 print(f"Orders Shape : {orders.shape}")
 print(f"Details Shape: {details.shape}")
 
-# =====================================================
-# CONVERT DATA TYPES
-# =====================================================
 
 orders["Order Date"] = pd.to_datetime(
     orders["Order Date"],
@@ -76,15 +61,10 @@ details["Quantity"] = pd.to_numeric(details["Quantity"])
 
 orders = orders.dropna(subset=["Order Date"])
 
-# =====================================================
-# SORT
-# =====================================================
 
 orders = orders.sort_values("Order Date")
 
-# =====================================================
-# MERGE
-# =====================================================
+
 
 merged = pd.merge(
     orders,
@@ -93,9 +73,7 @@ merged = pd.merge(
     how="inner"
 )
 
-# =====================================================
-# VALIDATION REPORT
-# =====================================================
+
 
 print("\n" + "=" * 80)
 print("VALIDATION REPORT")
@@ -142,9 +120,7 @@ print("\nTotal Quantity")
 
 print(int(merged["Quantity"].sum()))
 
-# =====================================================
-# SAVE CLEAN DATA
-# =====================================================
+
 
 merged.to_csv(
     OUTPUT_DIR / "forecasting_cleaned.csv",

@@ -1,22 +1,9 @@
-"""
-Aggregate transactional sales into a continuous daily time series.
-
-Responsibilities:
-- Load cleaned forecasting dataset
-- Validate input
-- Aggregate daily sales
-- Fill missing dates
-- Add calendar features
-- Save processed dataset
-"""
-
 from pathlib import Path
 import logging
 import pandas as pd
 
-# ==========================================================
+
 # Logging Configuration
-# ==========================================================
 
 logging.basicConfig(
     level=logging.INFO,
@@ -25,9 +12,8 @@ logging.basicConfig(
 
 logger = logging.getLogger(__name__)
 
-# ==========================================================
+
 # Paths
-# ==========================================================
 
 INPUT_FILE = Path("ml/data/processed/forecasting_cleaned.csv")
 OUTPUT_DIR = Path("ml/data/processed")
@@ -35,9 +21,8 @@ OUTPUT_FILE = OUTPUT_DIR / "daily_sales.csv"
 
 OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
 
-# ==========================================================
+
 # Validation
-# ==========================================================
 
 REQUIRED_COLUMNS = {
     "Order Date",
@@ -68,9 +53,7 @@ def validate_input(df: pd.DataFrame) -> None:
         )
 
 
-# ==========================================================
 # Main
-# ==========================================================
 
 def main():
 
@@ -83,9 +66,8 @@ def main():
 
     logger.info("Loaded %d rows", len(df))
 
-    # ---------------------------------------------
+
     # Convert Date
-    # ---------------------------------------------
 
     df["Order Date"] = pd.to_datetime(df["Order Date"])
 
@@ -93,9 +75,7 @@ def main():
 
     logger.info("Input validation passed.")
 
-    # ---------------------------------------------
-    # Aggregate Daily Sales
-    # ---------------------------------------------
+
 
     logger.info("Aggregating daily sales...")
 
@@ -110,9 +90,7 @@ def main():
           .sort_values("Order Date")
     )
 
-    # ---------------------------------------------
-    # Create Complete Date Range
-    # ---------------------------------------------
+  
 
     logger.info("Generating continuous date range...")
 
@@ -142,9 +120,7 @@ def main():
         .fillna(0)
     )
 
-    # ---------------------------------------------
-    # Calendar Features
-    # ---------------------------------------------
+  
 
     logger.info("Adding calendar features...")
 
@@ -157,9 +133,7 @@ def main():
         daily_sales["day_of_week"] >= 5
     ).astype(int)
 
-    # ---------------------------------------------
-    # Save
-    # ---------------------------------------------
+   
 
     daily_sales.to_csv(
         OUTPUT_FILE,
@@ -168,9 +142,6 @@ def main():
 
     logger.info("Saved: %s", OUTPUT_FILE)
 
-    # ---------------------------------------------
-    # Validation Report
-    # ---------------------------------------------
 
     print("\n" + "=" * 70)
     print("DAILY SALES VALIDATION REPORT")

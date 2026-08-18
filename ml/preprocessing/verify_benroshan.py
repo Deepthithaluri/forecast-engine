@@ -28,9 +28,7 @@ print(orders.isnull().sum())
 print("\nOrder Details")
 print(details.isnull().sum())
 
-# -----------------------------
-# Convert date
-# -----------------------------
+
 orders["Order Date"] = pd.to_datetime(
     orders["Order Date"],
     dayfirst=True,
@@ -53,9 +51,7 @@ print("-" * 80)
 print("Unique Products :", details["Category"].nunique())
 print("Total Line Items :", len(details))
 
-# -----------------------------
-# Merge
-# -----------------------------
+
 merged = pd.merge(
     orders,
     details,
@@ -71,9 +67,7 @@ print("\nTOTAL SALES")
 print("-" * 80)
 print(f"₹ {merged['Amount'].sum():,.2f}")
 
-# -----------------------------
-# Daily Sales
-# -----------------------------
+
 daily_sales = (
     merged
     .groupby("Order Date")["Amount"]
@@ -88,9 +82,7 @@ print("Daily Observations :", len(daily_sales))
 print("\nDaily Sales Summary")
 print(daily_sales["Amount"].describe())
 
-# -----------------------------
-# Missing Days
-# -----------------------------
+
 full_dates = pd.date_range(
     daily_sales["Order Date"].min(),
     daily_sales["Order Date"].max(),
@@ -103,9 +95,7 @@ print("\nMISSING DAYS")
 print("-" * 80)
 print("Number of Missing Days :", len(missing_days))
 
-# -----------------------------
-# Orders Per Day
-# -----------------------------
+
 orders_per_day = (
     merged
     .groupby("Order Date")["Order ID"]
@@ -116,9 +106,7 @@ print("\nORDERS PER DAY")
 print("-" * 80)
 print(orders_per_day.describe())
 
-# -----------------------------
-# Categories
-# -----------------------------
+
 print("\nCATEGORY DISTRIBUTION")
 print("-" * 80)
 print(
@@ -126,9 +114,7 @@ print(
     .value_counts()
 )
 
-# -----------------------------
-# States
-# -----------------------------
+
 if "State" in orders.columns:
     print("\nSTATE DISTRIBUTION")
     print("-" * 80)
@@ -137,9 +123,7 @@ if "State" in orders.columns:
         .value_counts()
     )
 
-# -----------------------------
-# Final Checks
-# -----------------------------
+
 print("\nFINAL CHECKLIST")
 print("-" * 80)
 
