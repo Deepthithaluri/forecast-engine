@@ -1,0 +1,10 @@
+{
+    "model": "XGBoost Regressor",
+    "train_rows": 269,
+    "test_rows": 68,
+    "feature_count": 24,
+    "mae": 588.39996954974,
+    "rmse": 1103.246928060742,
+    "mape": 122.55063315962813,
+    "r2": 0.728581212301182
+}
